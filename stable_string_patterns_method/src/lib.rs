@@ -15,7 +15,10 @@ pub trait Searchable: Sealed {
     #[cfg(feature = "1.0")]
     fn rfind(self, haystack: &str) -> Option<usize>;
     #[cfg(feature = "1.0")]
-    fn split(self, haystack: &str) -> impl Iterator<Item = &str>;
+    type Split<'a>;
+
+    #[cfg(feature = "1.0")]
+    fn split(self, haystack: &str) -> Self::Split<'_>;
     #[cfg(feature = "1.0")]
     fn rsplit(self, haystack: &str) -> impl Iterator<Item = &str>;
     #[cfg(feature = "1.0")]
@@ -79,7 +82,10 @@ impl Searchable for &str {
         haystack.rfind(self)
     }
     #[cfg(feature = "1.0")]
-    fn split(self, haystack: &str) -> impl Iterator<Item = &str> {
+    type Split<'a> = std::str::Split<'a, Self>;
+
+    #[cfg(feature = "1.0")]
+    fn split(self, haystack: &str) -> Self::Split<'_> {
         haystack.split(self)
     }
     #[cfg(feature = "1.0")]
@@ -168,7 +174,10 @@ impl Searchable for char {
         haystack.rfind(self)
     }
     #[cfg(feature = "1.0")]
-    fn split(self, haystack: &str) -> impl Iterator<Item = &str> {
+    type Split<'a> = std::str::Split<'a, Self>;
+
+    #[cfg(feature = "1.0")]
+    fn split(self, haystack: &str) -> Self::Split<'_> {
         haystack.split(self)
     }
     #[cfg(feature = "1.0")]
@@ -271,7 +280,10 @@ where
         haystack.rfind(self)
     }
     #[cfg(feature = "1.0")]
-    fn split(self, haystack: &str) -> impl Iterator<Item = &str> {
+    type Split<'a> = std::str::Split<'a, Self>;
+
+    #[cfg(feature = "1.0")]
+    fn split(self, haystack: &str) -> Self::Split<'_> {
         haystack.split(self)
     }
     #[cfg(feature = "1.0")]

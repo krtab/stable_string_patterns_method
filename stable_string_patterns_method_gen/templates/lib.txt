@@ -7,6 +7,10 @@ use crate::private::Sealed;
 pub trait Searchable: Sealed {
 {%- for func in fns %}
 {%- if !func.double_ended %}
+    {%- if let Some(redef) = func.redef_local_name() %}
+        #[cfg(feature = "{{func.since}}")]
+        type {{redef}}<'a>;
+    {% endif %}
     #[cfg(feature = "{{func.since}}")]
     fn {{ func.name }}(
         self,
@@ -17,7 +21,7 @@ pub trait Searchable: Sealed {
         {%- for (name, typ) in func.args_after %}
             {{ name }} : {{ typ }},
         {%- endfor %}
-    ) -> {{ func.ret_type }};
+    ) -> {{ func.ret_type() }};
 {%- endif %}
 {%- endfor %}
 }
@@ -26,6 +30,10 @@ pub trait Searchable: Sealed {
 pub trait DoubleEndedSearchable: Searchable {
 {%- for func in fns %}
 {%- if func.double_ended %}
+    {%- if let Some(redef) = func.redef_local_name() %}
+        #[cfg(feature = "{{func.since}}")]
+        type {{redef}}<'a>;
+    {% endif %}
     #[cfg(feature = "{{func.since}}")]
     fn {{ func.name }}(
         self,
@@ -36,7 +44,7 @@ pub trait DoubleEndedSearchable: Searchable {
         {%- for (name, typ) in func.args_after %}
             {{ name }} : {{ typ }},
         {%- endfor %}
-    ) -> {{ func.ret_type }};
+    ) -> {{ func.ret_type() }};
 {%- endif %}
 {%- endfor %}
 }
@@ -58,6 +66,10 @@ impl<{{ name }}> Searchable for {{ name }} where {{ bounds }} {
 {%- endmatch %}
 {%- for func in fns %}
 {%- if !func.double_ended %}
+    {%- if let Some(redef) = func.redef_local_name() %}
+        #[cfg(feature = "{{func.since}}")]
+        type {{redef}}<'a> = std::str::{{redef}}<'a,Self>;
+    {% endif %}
     #[cfg(feature = "{{func.since}}")]
     fn {{ func.name }}(
         self,
@@ -68,7 +80,7 @@ impl<{{ name }}> Searchable for {{ name }} where {{ bounds }} {
         {%- for (name, typ) in func.args_after %}
             {{ name }} : {{ typ }},
         {%- endfor %}
-        ) -> {{ func.ret_type }} {
+        ) -> {{ func.ret_type() }} {
         haystack.{{ func.name }}(
             {%- for (name, typ) in func.args_before %}
                 {{ name }},
@@ -96,6 +108,10 @@ impl<{{ name }}> DoubleEndedSearchable for {{ name }} where {{ bounds }} {
 {%- endmatch %}
 {%- for func in fns %}
 {%- if func.double_ended %}
+    {%- if let Some(redef) = func.redef_local_name() %}
+        #[cfg(feature = "{{func.since}}")]
+        type {{redef}}<'a> = std::str::{{redef}}<'a,Self>;
+    {% endif %}
     #[cfg(feature = "{{func.since}}")]
     fn {{ func.name }}(
         self,
@@ -106,7 +122,7 @@ impl<{{ name }}> DoubleEndedSearchable for {{ name }} where {{ bounds }} {
         {%- for (name, typ) in func.args_after %}
             {{ name }} : {{ typ }},
         {%- endfor %}
-        ) -> {{ func.ret_type }} {
+        ) -> {{ func.ret_type() }} {
         haystack.{{ func.name }}(
             {%- for (name, typ) in func.args_before %}
                 {{ name }},

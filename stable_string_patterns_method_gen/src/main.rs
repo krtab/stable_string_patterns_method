@@ -44,27 +44,69 @@ struct TraitFunction {
     name: &'static str,
     args_before: &'static [(&'static str, &'static str)],
     args_after: &'static [(&'static str, &'static str)],
-    ret_type: &'static str,
+    ret_type: RetType,
     since: Version,
     double_ended: bool,
 }
 
+enum DisplayRetType {
+    Local(&'static str),
+    Global(&'static str),
+}
+
+impl Display for DisplayRetType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DisplayRetType::Local(n) => write!(f, "Self::{n}<'_>"),
+            DisplayRetType::Global(n) => write!(f, "{n}"),
+        }
+    }
+}
+
+impl TraitFunction {
+    fn redef_local_name(&self) -> Option<&'static str> {
+        match self.ret_type {
+            RetType::Raw(_) => None,
+            RetType::Redefined(s) => Some(s),
+        }
+    }
+
+    fn ret_type(&self) -> DisplayRetType {
+        match self.ret_type {
+            RetType::Raw(n) => DisplayRetType::Global(n),
+            RetType::Redefined(n) => DisplayRetType::Local(n),
+        }
+    }
+}
+
 static TARGETS: &[ImplTarget] = &[
-    ImplTarget::Type{ ty: "&str", double_ended: false},
-    ImplTarget::Type{ ty: "char", double_ended: true},
+    ImplTarget::Type {
+        ty: "&str",
+        double_ended: false,
+    },
+    ImplTarget::Type {
+        ty: "char",
+        double_ended: true,
+    },
     ImplTarget::Generic {
         name: "F",
         bounds: "F: FnMut(char) -> bool",
-        double_ended: true
+        double_ended: true,
     },
 ];
+
+#[derive(Debug)]
+enum RetType {
+    Raw(&'static str),
+    Redefined(&'static str),
+}
 
 static FNS: &[TraitFunction] = &[
     TraitFunction {
         name: "contains",
         args_before: &[],
         args_after: &[],
-        ret_type: "bool",
+        ret_type: RetType::Raw("bool"),
         since: Version { minor: 0 },
         double_ended: false,
     },
@@ -72,7 +114,7 @@ static FNS: &[TraitFunction] = &[
         name: "starts_with",
         args_before: &[],
         args_after: &[],
-        ret_type: "bool",
+        ret_type: RetType::Raw("bool"),
         since: Version { minor: 0 },
         double_ended: false,
     },
@@ -80,7 +122,7 @@ static FNS: &[TraitFunction] = &[
         name: "ends_with",
         args_before: &[],
         args_after: &[],
-        ret_type: "bool",
+        ret_type: RetType::Raw("bool"),
         since: Version { minor: 0 },
         double_ended: false,
     },
@@ -88,7 +130,7 @@ static FNS: &[TraitFunction] = &[
         name: "find",
         args_before: &[],
         args_after: &[],
-        ret_type: "Option<usize>",
+        ret_type: RetType::Raw("Option<usize>"),
         since: Version { minor: 0 },
         double_ended: false,
     },
@@ -96,7 +138,7 @@ static FNS: &[TraitFunction] = &[
         name: "rfind",
         args_before: &[],
         args_after: &[],
-        ret_type: "Option<usize>",
+        ret_type: RetType::Raw("Option<usize>"),
         since: Version { minor: 0 },
         double_ended: false,
     },
@@ -104,7 +146,7 @@ static FNS: &[TraitFunction] = &[
         name: "split",
         args_before: &[],
         args_after: &[],
-        ret_type: "impl Iterator<Item = &str>",
+        ret_type: RetType::Redefined("Split"),
         since: Version { minor: 0 },
         double_ended: false,
     },
@@ -112,7 +154,7 @@ static FNS: &[TraitFunction] = &[
         name: "rsplit",
         args_before: &[],
         args_after: &[],
-        ret_type: "impl Iterator<Item = &str>",
+        ret_type: RetType::Raw("impl Iterator<Item = &str>"),
         since: Version { minor: 0 },
         double_ended: false,
     },
@@ -120,7 +162,7 @@ static FNS: &[TraitFunction] = &[
         name: "split_terminator",
         args_before: &[],
         args_after: &[],
-        ret_type: "impl Iterator<Item = &str>",
+        ret_type: RetType::Raw("impl Iterator<Item = &str>"),
         since: Version { minor: 0 },
         double_ended: false,
     },
@@ -128,7 +170,7 @@ static FNS: &[TraitFunction] = &[
         name: "rsplit_terminator",
         args_before: &[],
         args_after: &[],
-        ret_type: "impl Iterator<Item = &str>",
+        ret_type: RetType::Raw("impl Iterator<Item = &str>"),
         since: Version { minor: 0 },
         double_ended: false,
     },
@@ -136,7 +178,7 @@ static FNS: &[TraitFunction] = &[
         name: "splitn",
         args_before: &[("n", "usize")],
         args_after: &[],
-        ret_type: "impl Iterator<Item = &str>",
+        ret_type: RetType::Raw("impl Iterator<Item = &str>"),
         since: Version { minor: 0 },
         double_ended: false,
     },
@@ -144,7 +186,7 @@ static FNS: &[TraitFunction] = &[
         name: "rsplitn",
         args_before: &[("n", "usize")],
         args_after: &[],
-        ret_type: "impl Iterator<Item = &str>",
+        ret_type: RetType::Raw("impl Iterator<Item = &str>"),
         since: Version { minor: 0 },
         double_ended: false,
     },
@@ -152,7 +194,7 @@ static FNS: &[TraitFunction] = &[
         name: "matches",
         args_before: &[],
         args_after: &[],
-        ret_type: "impl Iterator<Item = &str>",
+        ret_type: RetType::Raw("impl Iterator<Item = &str>"),
         since: Version { minor: 0 },
         double_ended: false,
     },
@@ -160,7 +202,7 @@ static FNS: &[TraitFunction] = &[
         name: "rmatches",
         args_before: &[],
         args_after: &[],
-        ret_type: "impl Iterator<Item = &str>",
+        ret_type: RetType::Raw("impl Iterator<Item = &str>"),
         since: Version { minor: 0 },
         double_ended: false,
     },
@@ -168,7 +210,7 @@ static FNS: &[TraitFunction] = &[
         name: "match_indices",
         args_before: &[],
         args_after: &[],
-        ret_type: "impl Iterator<Item = (usize, &str)>",
+        ret_type: RetType::Raw("impl Iterator<Item = (usize, &str)>"),
         since: Version { minor: 0 },
         double_ended: false,
     },
@@ -176,7 +218,7 @@ static FNS: &[TraitFunction] = &[
         name: "rmatch_indices",
         args_before: &[],
         args_after: &[],
-        ret_type: "impl Iterator<Item = (usize, &str)>",
+        ret_type: RetType::Raw("impl Iterator<Item = (usize, &str)>"),
         since: Version { minor: 0 },
         double_ended: false,
     },
@@ -184,7 +226,7 @@ static FNS: &[TraitFunction] = &[
         name: "trim_start_matches",
         args_before: &[],
         args_after: &[],
-        ret_type: "&str",
+        ret_type: RetType::Raw("&str"),
         since: Version { minor: 30 },
         double_ended: false,
     },
@@ -192,7 +234,7 @@ static FNS: &[TraitFunction] = &[
         name: "strip_prefix",
         args_before: &[],
         args_after: &[],
-        ret_type: "Option<&str>",
+        ret_type: RetType::Raw("Option<&str>"),
         since: Version { minor: 45 },
         double_ended: false,
     },
@@ -200,7 +242,7 @@ static FNS: &[TraitFunction] = &[
         name: "strip_suffix",
         args_before: &[],
         args_after: &[],
-        ret_type: "Option<&str>",
+        ret_type: RetType::Raw("Option<&str>"),
         since: Version { minor: 45 },
         double_ended: false,
     },
@@ -208,7 +250,7 @@ static FNS: &[TraitFunction] = &[
         name: "replace",
         args_before: &[],
         args_after: &[("to", "&str")],
-        ret_type: "String",
+        ret_type: RetType::Raw("String"),
         since: Version { minor: 0 },
         double_ended: false,
     },
@@ -216,7 +258,7 @@ static FNS: &[TraitFunction] = &[
         name: "replacen",
         args_before: &[],
         args_after: &[("to", "&str"), ("count", "usize")],
-        ret_type: "String",
+        ret_type: RetType::Raw("String"),
         since: Version { minor: 0 },
         double_ended: false,
     },
@@ -224,7 +266,7 @@ static FNS: &[TraitFunction] = &[
         name: "split_inclusive",
         args_before: &[],
         args_after: &[],
-        ret_type: "impl Iterator<Item = &str>",
+        ret_type: RetType::Raw("impl Iterator<Item = &str>"),
         since: Version { minor: 51 },
         double_ended: false,
     },
@@ -232,7 +274,7 @@ static FNS: &[TraitFunction] = &[
         name: "trim_matches",
         args_before: &[],
         args_after: &[],
-        ret_type: "&str",
+        ret_type: RetType::Raw("&str"),
         since: Version { minor: 0 },
         double_ended: true,
     },
@@ -240,7 +282,7 @@ static FNS: &[TraitFunction] = &[
         name: "trim_end_matches",
         args_before: &[],
         args_after: &[],
-        ret_type: "&str",
+        ret_type: RetType::Raw("&str"),
         since: Version { minor: 30 },
         double_ended: true,
     },
