@@ -12,17 +12,31 @@ struct Version {
 
 impl Display for Version {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "1.{}",self.minor)
+        write!(f, "1.{}", self.minor)
     }
 }
 
 #[derive(Debug)]
 enum ImplTarget {
-    Type(&'static str),
+    Type {
+        ty: &'static str,
+        double_ended: bool,
+    },
     Generic {
         name: &'static str,
         bounds: &'static str,
+        double_ended: bool,
     },
+}
+
+impl ImplTarget {
+    fn double_ended(&self) -> bool {
+        match self {
+            ImplTarget::Type { double_ended, .. } | ImplTarget::Generic { double_ended, .. } => {
+                *double_ended
+            }
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -32,14 +46,16 @@ struct TraitFunction {
     args_after: &'static [(&'static str, &'static str)],
     ret_type: &'static str,
     since: Version,
+    double_ended: bool,
 }
 
 static TARGETS: &[ImplTarget] = &[
-    ImplTarget::Type("&str"),
-    ImplTarget::Type("char"),
+    ImplTarget::Type{ ty: "&str", double_ended: false},
+    ImplTarget::Type{ ty: "char", double_ended: true},
     ImplTarget::Generic {
         name: "F",
         bounds: "F: FnMut(char) -> bool",
+        double_ended: true
     },
 ];
 
@@ -50,6 +66,7 @@ static FNS: &[TraitFunction] = &[
         args_after: &[],
         ret_type: "bool",
         since: Version { minor: 0 },
+        double_ended: false,
     },
     TraitFunction {
         name: "starts_with",
@@ -57,6 +74,7 @@ static FNS: &[TraitFunction] = &[
         args_after: &[],
         ret_type: "bool",
         since: Version { minor: 0 },
+        double_ended: false,
     },
     TraitFunction {
         name: "ends_with",
@@ -64,6 +82,7 @@ static FNS: &[TraitFunction] = &[
         args_after: &[],
         ret_type: "bool",
         since: Version { minor: 0 },
+        double_ended: false,
     },
     TraitFunction {
         name: "find",
@@ -71,6 +90,7 @@ static FNS: &[TraitFunction] = &[
         args_after: &[],
         ret_type: "Option<usize>",
         since: Version { minor: 0 },
+        double_ended: false,
     },
     TraitFunction {
         name: "rfind",
@@ -78,6 +98,7 @@ static FNS: &[TraitFunction] = &[
         args_after: &[],
         ret_type: "Option<usize>",
         since: Version { minor: 0 },
+        double_ended: false,
     },
     TraitFunction {
         name: "split",
@@ -85,6 +106,7 @@ static FNS: &[TraitFunction] = &[
         args_after: &[],
         ret_type: "impl Iterator<Item = &str>",
         since: Version { minor: 0 },
+        double_ended: false,
     },
     TraitFunction {
         name: "rsplit",
@@ -92,6 +114,7 @@ static FNS: &[TraitFunction] = &[
         args_after: &[],
         ret_type: "impl Iterator<Item = &str>",
         since: Version { minor: 0 },
+        double_ended: false,
     },
     TraitFunction {
         name: "split_terminator",
@@ -99,6 +122,7 @@ static FNS: &[TraitFunction] = &[
         args_after: &[],
         ret_type: "impl Iterator<Item = &str>",
         since: Version { minor: 0 },
+        double_ended: false,
     },
     TraitFunction {
         name: "rsplit_terminator",
@@ -106,6 +130,7 @@ static FNS: &[TraitFunction] = &[
         args_after: &[],
         ret_type: "impl Iterator<Item = &str>",
         since: Version { minor: 0 },
+        double_ended: false,
     },
     TraitFunction {
         name: "splitn",
@@ -113,6 +138,7 @@ static FNS: &[TraitFunction] = &[
         args_after: &[],
         ret_type: "impl Iterator<Item = &str>",
         since: Version { minor: 0 },
+        double_ended: false,
     },
     TraitFunction {
         name: "rsplitn",
@@ -120,6 +146,7 @@ static FNS: &[TraitFunction] = &[
         args_after: &[],
         ret_type: "impl Iterator<Item = &str>",
         since: Version { minor: 0 },
+        double_ended: false,
     },
     TraitFunction {
         name: "matches",
@@ -127,6 +154,7 @@ static FNS: &[TraitFunction] = &[
         args_after: &[],
         ret_type: "impl Iterator<Item = &str>",
         since: Version { minor: 0 },
+        double_ended: false,
     },
     TraitFunction {
         name: "rmatches",
@@ -134,6 +162,7 @@ static FNS: &[TraitFunction] = &[
         args_after: &[],
         ret_type: "impl Iterator<Item = &str>",
         since: Version { minor: 0 },
+        double_ended: false,
     },
     TraitFunction {
         name: "match_indices",
@@ -141,6 +170,7 @@ static FNS: &[TraitFunction] = &[
         args_after: &[],
         ret_type: "impl Iterator<Item = (usize, &str)>",
         since: Version { minor: 0 },
+        double_ended: false,
     },
     TraitFunction {
         name: "rmatch_indices",
@@ -148,6 +178,7 @@ static FNS: &[TraitFunction] = &[
         args_after: &[],
         ret_type: "impl Iterator<Item = (usize, &str)>",
         since: Version { minor: 0 },
+        double_ended: false,
     },
     TraitFunction {
         name: "trim_start_matches",
@@ -155,6 +186,7 @@ static FNS: &[TraitFunction] = &[
         args_after: &[],
         ret_type: "&str",
         since: Version { minor: 30 },
+        double_ended: false,
     },
     TraitFunction {
         name: "strip_prefix",
@@ -162,6 +194,7 @@ static FNS: &[TraitFunction] = &[
         args_after: &[],
         ret_type: "Option<&str>",
         since: Version { minor: 45 },
+        double_ended: false,
     },
     TraitFunction {
         name: "strip_suffix",
@@ -169,6 +202,7 @@ static FNS: &[TraitFunction] = &[
         args_after: &[],
         ret_type: "Option<&str>",
         since: Version { minor: 45 },
+        double_ended: false,
     },
     TraitFunction {
         name: "replace",
@@ -176,6 +210,7 @@ static FNS: &[TraitFunction] = &[
         args_after: &[("to", "&str")],
         ret_type: "String",
         since: Version { minor: 0 },
+        double_ended: false,
     },
     TraitFunction {
         name: "replacen",
@@ -183,6 +218,7 @@ static FNS: &[TraitFunction] = &[
         args_after: &[("to", "&str"), ("count", "usize")],
         ret_type: "String",
         since: Version { minor: 0 },
+        double_ended: false,
     },
     TraitFunction {
         name: "split_inclusive",
@@ -190,6 +226,23 @@ static FNS: &[TraitFunction] = &[
         args_after: &[],
         ret_type: "impl Iterator<Item = &str>",
         since: Version { minor: 51 },
+        double_ended: false,
+    },
+    TraitFunction {
+        name: "trim_matches",
+        args_before: &[],
+        args_after: &[],
+        ret_type: "&str",
+        since: Version { minor: 0 },
+        double_ended: true,
+    },
+    TraitFunction {
+        name: "trim_end_matches",
+        args_before: &[],
+        args_after: &[],
+        ret_type: "&str",
+        since: Version { minor: 30 },
+        double_ended: true,
     },
 ];
 
@@ -243,6 +296,10 @@ fn main() -> anyhow::Result<()> {
         .write_into(&mut open("Cargo.toml")?)
         .context("Error rendering Cargo.toml template")?;
 
-    println!("Successfully generated crate at: {} ({} functions)", output_dir.display(), FNS.len());
+    println!(
+        "Successfully generated crate at: {} ({} functions)",
+        output_dir.display(),
+        FNS.len()
+    );
     Ok(())
 }

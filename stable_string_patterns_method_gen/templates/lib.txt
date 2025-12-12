@@ -6,6 +6,7 @@ use crate::private::Sealed;
 /// Trait for types that can be used as search patterns in strings
 pub trait Searchable: Sealed {
 {%- for func in fns %}
+{%- if !func.double_ended %}
     #[cfg(feature = "{{func.since}}")]
     fn {{ func.name }}(
         self,
@@ -17,26 +18,46 @@ pub trait Searchable: Sealed {
             {{ name }} : {{ typ }},
         {%- endfor %}
     ) -> {{ func.ret_type }};
+{%- endif %}
+{%- endfor %}
+}
+
+/// Trait for types whose searcher implements DoubleEndedSearcher
+pub trait DoubleEndedSearchable: Searchable {
+{%- for func in fns %}
+{%- if func.double_ended %}
+    #[cfg(feature = "{{func.since}}")]
+    fn {{ func.name }}(
+        self,
+        haystack: &str,
+        {%- for (name, typ) in func.args_before %}
+            {{ name }} : {{ typ }},
+        {%- endfor %}
+        {%- for (name, typ) in func.args_after %}
+            {{ name }} : {{ typ }},
+        {%- endfor %}
+    ) -> {{ func.ret_type }};
+{%- endif %}
 {%- endfor %}
 }
 
 {%- for target in targets %}
 {%- match target %}
-{%- when ImplTarget::Type with (type_name) %}
+{%- when ImplTarget::Type with { ty, .. } %}
 
-impl Sealed for {{ type_name }} {}
+impl Sealed for {{ ty }} {}
 
-impl Searchable for {{ type_name }} {
+impl Searchable for {{ ty }} {
 
-{%- when ImplTarget::Generic with { name, bounds } %}
-    
+{%- when ImplTarget::Generic with { name, bounds, .. } %}
+
 impl<{{ name }}> Sealed for {{ name }} where {{ bounds }} {}
 
 impl<{{ name }}> Searchable for {{ name }} where {{ bounds }} {
-                
-{%- endmatch %}
 
+{%- endmatch %}
 {%- for func in fns %}
+{%- if !func.double_ended %}
     #[cfg(feature = "{{func.since}}")]
     fn {{ func.name }}(
         self,
@@ -58,6 +79,46 @@ impl<{{ name }}> Searchable for {{ name }} where {{ bounds }} {
             {%- endfor %}
         )
     }
+{%- endif %}
 {%- endfor %}
 }
+
+{%- if target.double_ended() %}
+{%- match target %}
+{%- when ImplTarget::Type with { ty, .. } %}
+
+impl DoubleEndedSearchable for {{ ty }} {
+
+{%- when ImplTarget::Generic with { name, bounds, .. } %}
+
+impl<{{ name }}> DoubleEndedSearchable for {{ name }} where {{ bounds }} {
+
+{%- endmatch %}
+{%- for func in fns %}
+{%- if func.double_ended %}
+    #[cfg(feature = "{{func.since}}")]
+    fn {{ func.name }}(
+        self,
+        haystack: &str,
+        {%- for (name, typ) in func.args_before %}
+            {{ name }} : {{ typ }},
+        {%- endfor %}
+        {%- for (name, typ) in func.args_after %}
+            {{ name }} : {{ typ }},
+        {%- endfor %}
+        ) -> {{ func.ret_type }} {
+        haystack.{{ func.name }}(
+            {%- for (name, typ) in func.args_before %}
+                {{ name }},
+            {%- endfor %}
+            self{%- if !func.args_after.is_empty() %},{% endif %}
+            {%- for (name, typ) in func.args_after %}
+                {{ name }},
+            {%- endfor %}
+        )
+    }
+{%- endif %}
+{%- endfor %}
+}
+{%- endif %}
 {%- endfor %}
