@@ -3,7 +3,7 @@ mod private {
 }
 use crate::private::Sealed;
 
-/// Trait for types that can be used as search patterns in strings
+
 pub trait Searchable: Sealed {
 {%- for func in fns %}
 {%- if !func.double_ended %}
@@ -22,7 +22,7 @@ pub trait Searchable: Sealed {
 {%- endfor %}
 }
 
-/// Trait for types whose searcher implements DoubleEndedSearcher
+
 pub trait DoubleEndedSearchable: Searchable {
 {%- for func in fns %}
 {%- if func.double_ended %}
