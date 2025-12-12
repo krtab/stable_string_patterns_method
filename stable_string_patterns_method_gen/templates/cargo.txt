@@ -1,0 +1,17 @@
+[package]
+name = "stable_string_patterns_method"
+version = "0.1.0"
+edition = "2015"
+
+[dependencies]
+
+[features]
+{%- for minor in 0..=latest_minor %}
+{%- if minor == 0 %}
+"1.0" = []
+{%- else %}
+"1.{{minor}}" =["1.{{minor - 1}}"]
+{%- endif %} 
+{%- endfor %}
+"latest" = ["1.{{latest_minor}}"]
+default = ["latest"]

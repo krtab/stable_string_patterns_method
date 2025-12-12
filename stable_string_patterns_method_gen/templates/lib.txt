@@ -1,0 +1,37 @@
+mod private {
+    pub trait Sealed {}
+}
+use crate::private::Sealed;
+
+/// Trait for types that can be used as search patterns in strings
+pub trait Searchable: Sealed {
+{%- for func in fns %}
+    #[cfg(feature = "{{func.since}}")]
+    fn {{ func.name }}(self, haystack: &str) -> {{ func.ret_type }};
+{%- endfor %}
+}
+
+{%- for target in targets %}
+{%- match target %}
+{%- when ImplTarget::Type with (type_name) %}
+
+impl Sealed for {{ type_name }} {}
+
+impl Searchable for {{ type_name }} {
+
+{%- when ImplTarget::Generic with { name, bounds } %}
+    
+impl<{{ name }}> Sealed for {{ name }} where {{ bounds }} {}
+
+impl<{{ name }}> Searchable for {{ name }} where {{ bounds }} {
+                
+{%- endmatch %}
+
+{%- for func in fns %}
+    #[cfg(feature = "{{func.since}}")]
+    fn {{ func.name }}(self, haystack: &str) -> {{ func.ret_type }} {
+        haystack.{{ func.name }}(self)
+    }
+{%- endfor %}
+}
+{%- endfor %}

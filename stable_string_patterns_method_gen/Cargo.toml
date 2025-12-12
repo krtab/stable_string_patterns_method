@@ -1,0 +1,8 @@
+[package]
+name = "stable_string_patterns_method_gen"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.100"
+askama = "0.14.0"
