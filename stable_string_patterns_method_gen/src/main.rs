@@ -50,14 +50,14 @@ struct TraitFunction {
 }
 
 enum DisplayRetType {
-    Local(&'static str),
+    Local(&'static str, &'static str),
     Global(&'static str),
 }
 
 impl Display for DisplayRetType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            DisplayRetType::Local(n) => write!(f, "Self::{n}<'_>"),
+            DisplayRetType::Local(context, n) => write!(f, "{context}::{n}<'_>"),
             DisplayRetType::Global(n) => write!(f, "{n}"),
         }
     }
@@ -71,10 +71,10 @@ impl TraitFunction {
         }
     }
 
-    fn ret_type(&self) -> DisplayRetType {
+    fn ret_type(&self, context: &'static str) -> DisplayRetType {
         match self.ret_type {
             RetType::Raw(n) => DisplayRetType::Global(n),
-            RetType::Redefined { name, items: _ } => DisplayRetType::Local(name),
+            RetType::Redefined { name, items: _ } => DisplayRetType::Local(context, name),
         }
     }
 

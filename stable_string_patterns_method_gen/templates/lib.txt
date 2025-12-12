@@ -12,7 +12,7 @@ pub trait Searchable: Sealed {
     type {{redef}}<'a> : Iterator<Item = {{ items }}>;
     {%- endif %}
     #[cfg(feature = "{{func.feature_gate()}}")]
-    fn {{ func.name }}(
+    fn {{ func.name }}_impl(
         self,
         haystack: &str,
         {%- for (name, typ) in func.args_before %}
@@ -21,7 +21,7 @@ pub trait Searchable: Sealed {
         {%- for (name, typ) in func.args_after %}
             {{ name }} : {{ typ }},
         {%- endfor %}
-    ) -> {{ func.ret_type() }};
+    ) -> {{ func.ret_type("Self") }};
 {%- endif %}
 {%- endfor %}
 }
@@ -35,7 +35,7 @@ pub trait DoubleEndedSearchable: Searchable {
     type {{redef}}<'a> : Iterator<Item = {{ items }}>;
     {%- endif %}
     #[cfg(feature = "{{func.feature_gate()}}")]
-    fn {{ func.name }}(
+    fn {{ func.name }}_impl(
         self,
         haystack: &str,
         {%- for (name, typ) in func.args_before %}
@@ -44,7 +44,7 @@ pub trait DoubleEndedSearchable: Searchable {
         {%- for (name, typ) in func.args_after %}
             {{ name }} : {{ typ }},
         {%- endfor %}
-    ) -> {{ func.ret_type() }};
+    ) -> {{ func.ret_type("Self") }};
 {%- endif %}
 {%- endfor %}
 }
@@ -71,7 +71,7 @@ impl<{{ name }}> Searchable for {{ name }} where {{ bounds }} {
     type {{redef}}<'a> = std::str::{{redef}}<'a,Self>;
     {%- endif %}
     #[cfg(feature = "{{func.feature_gate()}}")]
-    fn {{ func.name }}(
+    fn {{ func.name }}_impl(
         self,
         haystack: &str,
         {%- for (name, typ) in func.args_before %}
@@ -80,7 +80,7 @@ impl<{{ name }}> Searchable for {{ name }} where {{ bounds }} {
         {%- for (name, typ) in func.args_after %}
             {{ name }} : {{ typ }},
         {%- endfor %}
-        ) -> {{ func.ret_type() }} {
+        ) -> {{ func.ret_type("Self") }} {
         haystack.{{ func.name }}(
             {%- for (name, typ) in func.args_before %}
                 {{ name }},
@@ -113,7 +113,7 @@ impl<{{ name }}> DoubleEndedSearchable for {{ name }} where {{ bounds }} {
     type {{redef}}<'a> = std::str::{{redef}}<'a,Self>;
     {%- endif %}
     #[cfg(feature = "{{func.feature_gate()}}")]
-    fn {{ func.name }}(
+    fn {{ func.name }}_impl(
         self,
         haystack: &str,
         {%- for (name, typ) in func.args_before %}
@@ -122,7 +122,7 @@ impl<{{ name }}> DoubleEndedSearchable for {{ name }} where {{ bounds }} {
         {%- for (name, typ) in func.args_after %}
             {{ name }} : {{ typ }},
         {%- endfor %}
-        ) -> {{ func.ret_type() }} {
+        ) -> {{ func.ret_type("Self") }} {
         haystack.{{ func.name }}(
             {%- for (name, typ) in func.args_before %}
                 {{ name }},
@@ -138,3 +138,38 @@ impl<{{ name }}> DoubleEndedSearchable for {{ name }} where {{ bounds }} {
 }
 {%- endif %}
 {%- endfor %}
+
+pub trait StrPatternExt : std::convert::AsRef<str> {
+{%- for func in fns %}
+    fn {{ func.name }}<P>
+    (
+    &self,
+    {%- for (name, typ) in func.args_before %}
+        {{ name }} : {{ typ }},
+    {%- endfor %}
+    pattern: P,
+    {%- for (name, typ) in func.args_after %}
+        {{ name }} : {{ typ }},
+    {%- endfor %}
+    ) -> {{ func.ret_type("P") }}
+    where
+    {%- if func.double_ended %}
+    P: DoubleEndedSearchable
+    {%- else %}
+    P: Searchable
+    {% endif %}
+    {
+        pattern.{{ func.name }}_impl(
+            self.as_ref(),
+            {%- for (name, typ) in func.args_before %}
+                {{ name }},
+            {%- endfor %}
+            {%- for (name, typ) in func.args_after %}
+                {{ name }},
+            {%- endfor %}
+        )
+    }
+{%- endfor %}
+}
+
+impl StrPatternExt for str {}
