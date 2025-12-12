@@ -45,10 +45,108 @@ static TARGETS: &[ImplTarget] = &[
 
 static FNS: &[TraitFunction] = &[
     TraitFunction {
+        name: "contains",
+        args_before: &[],
+        args_after: &[],
+        ret_type: "bool",
+        since: Version { minor: 0 },
+    },
+    TraitFunction {
+        name: "starts_with",
+        args_before: &[],
+        args_after: &[],
+        ret_type: "bool",
+        since: Version { minor: 0 },
+    },
+    TraitFunction {
+        name: "ends_with",
+        args_before: &[],
+        args_after: &[],
+        ret_type: "bool",
+        since: Version { minor: 0 },
+    },
+    TraitFunction {
         name: "find",
         args_before: &[],
         args_after: &[],
         ret_type: "Option<usize>",
+        since: Version { minor: 0 },
+    },
+    TraitFunction {
+        name: "rfind",
+        args_before: &[],
+        args_after: &[],
+        ret_type: "Option<usize>",
+        since: Version { minor: 0 },
+    },
+    TraitFunction {
+        name: "split",
+        args_before: &[],
+        args_after: &[],
+        ret_type: "impl Iterator<Item = &str>",
+        since: Version { minor: 0 },
+    },
+    TraitFunction {
+        name: "rsplit",
+        args_before: &[],
+        args_after: &[],
+        ret_type: "impl Iterator<Item = &str>",
+        since: Version { minor: 0 },
+    },
+    TraitFunction {
+        name: "split_terminator",
+        args_before: &[],
+        args_after: &[],
+        ret_type: "impl Iterator<Item = &str>",
+        since: Version { minor: 0 },
+    },
+    TraitFunction {
+        name: "rsplit_terminator",
+        args_before: &[],
+        args_after: &[],
+        ret_type: "impl Iterator<Item = &str>",
+        since: Version { minor: 0 },
+    },
+    TraitFunction {
+        name: "splitn",
+        args_before: &[("n", "usize")],
+        args_after: &[],
+        ret_type: "impl Iterator<Item = &str>",
+        since: Version { minor: 0 },
+    },
+    TraitFunction {
+        name: "rsplitn",
+        args_before: &[("n", "usize")],
+        args_after: &[],
+        ret_type: "impl Iterator<Item = &str>",
+        since: Version { minor: 0 },
+    },
+    TraitFunction {
+        name: "matches",
+        args_before: &[],
+        args_after: &[],
+        ret_type: "impl Iterator<Item = &str>",
+        since: Version { minor: 0 },
+    },
+    TraitFunction {
+        name: "rmatches",
+        args_before: &[],
+        args_after: &[],
+        ret_type: "impl Iterator<Item = &str>",
+        since: Version { minor: 0 },
+    },
+    TraitFunction {
+        name: "match_indices",
+        args_before: &[],
+        args_after: &[],
+        ret_type: "impl Iterator<Item = (usize, &str)>",
+        since: Version { minor: 0 },
+    },
+    TraitFunction {
+        name: "rmatch_indices",
+        args_before: &[],
+        args_after: &[],
+        ret_type: "impl Iterator<Item = (usize, &str)>",
         since: Version { minor: 0 },
     },
     TraitFunction {
@@ -65,12 +163,33 @@ static FNS: &[TraitFunction] = &[
         ret_type: "Option<&str>",
         since: Version { minor: 45 },
     },
-        TraitFunction {
-        name: "splitn",
-        args_before: &[("n","usize")],
+    TraitFunction {
+        name: "strip_suffix",
+        args_before: &[],
+        args_after: &[],
+        ret_type: "Option<&str>",
+        since: Version { minor: 45 },
+    },
+    TraitFunction {
+        name: "replace",
+        args_before: &[],
+        args_after: &[("to", "&str")],
+        ret_type: "String",
+        since: Version { minor: 0 },
+    },
+    TraitFunction {
+        name: "replacen",
+        args_before: &[],
+        args_after: &[("to", "&str"), ("count", "usize")],
+        ret_type: "String",
+        since: Version { minor: 0 },
+    },
+    TraitFunction {
+        name: "split_inclusive",
+        args_before: &[],
         args_after: &[],
         ret_type: "impl Iterator<Item = &str>",
-        since: Version { minor: 0 },
+        since: Version { minor: 51 },
     },
 ];
 
@@ -106,6 +225,7 @@ fn main() -> anyhow::Result<()> {
         Ok(BufWriter::new(
             std::fs::File::options()
                 .write(true)
+                .create(true)
                 .truncate(true)
                 .open(&path)
                 .with_context(|| format!("Error opening file: {}", path.display()))?,
@@ -123,6 +243,6 @@ fn main() -> anyhow::Result<()> {
         .write_into(&mut open("Cargo.toml")?)
         .context("Error rendering Cargo.toml template")?;
 
-    println!("Successfully generated crate at: {}", output_dir.display());
+    println!("Successfully generated crate at: {} ({} functions)", output_dir.display(), FNS.len());
     Ok(())
 }

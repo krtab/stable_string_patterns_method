@@ -52,7 +52,7 @@ impl<{{ name }}> Searchable for {{ name }} where {{ bounds }} {
             {%- for (name, typ) in func.args_before %}
                 {{ name }},
             {%- endfor %}
-            self
+            self{%- if !func.args_after.is_empty() %},{% endif %}
             {%- for (name, typ) in func.args_after %}
                 {{ name }},
             {%- endfor %}
