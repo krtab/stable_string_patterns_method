@@ -5,7 +5,7 @@ use std::fs::{self, File};
 use std::io::BufWriter;
 use std::path::PathBuf;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 struct Version {
     minor: u32,
 }
@@ -64,17 +64,26 @@ impl Display for DisplayRetType {
 }
 
 impl TraitFunction {
-    fn redef_local_name(&self) -> Option<&'static str> {
+    fn redef_local_name_and_items(&self) -> Option<(&'static str, &'static str)> {
         match self.ret_type {
             RetType::Raw(_) => None,
-            RetType::Redefined(s) => Some(s),
+            RetType::Redefined { name, items } => Some((name, items)),
         }
     }
 
     fn ret_type(&self) -> DisplayRetType {
         match self.ret_type {
             RetType::Raw(n) => DisplayRetType::Global(n),
-            RetType::Redefined(n) => DisplayRetType::Local(n),
+            RetType::Redefined { name, items: _ } => DisplayRetType::Local(name),
+        }
+    }
+
+    fn feature_gate(&self) -> Version {
+        static GAT_VERSION: Version = Version { minor: 65 };
+        if self.redef_local_name_and_items().is_some() {
+            GAT_VERSION.max(self.since)
+        } else {
+            self.since
         }
     }
 }
@@ -88,6 +97,10 @@ static TARGETS: &[ImplTarget] = &[
         ty: "char",
         double_ended: true,
     },
+    ImplTarget::Type {
+        ty: "&[char]",
+        double_ended: true,
+    },
     ImplTarget::Generic {
         name: "F",
         bounds: "F: FnMut(char) -> bool",
@@ -98,7 +111,10 @@ static TARGETS: &[ImplTarget] = &[
 #[derive(Debug)]
 enum RetType {
     Raw(&'static str),
-    Redefined(&'static str),
+    Redefined {
+        name: &'static str,
+        items: &'static str,
+    },
 }
 
 static FNS: &[TraitFunction] = &[
@@ -146,7 +162,10 @@ static FNS: &[TraitFunction] = &[
         name: "split",
         args_before: &[],
         args_after: &[],
-        ret_type: RetType::Redefined("Split"),
+        ret_type: RetType::Redefined {
+            name: "Split",
+            items: "&'a str",
+        },
         since: Version { minor: 0 },
         double_ended: false,
     },
@@ -154,7 +173,10 @@ static FNS: &[TraitFunction] = &[
         name: "rsplit",
         args_before: &[],
         args_after: &[],
-        ret_type: RetType::Raw("impl Iterator<Item = &str>"),
+        ret_type: RetType::Redefined {
+            name: "RSplit",
+            items: "&'a str",
+        },
         since: Version { minor: 0 },
         double_ended: false,
     },
@@ -162,7 +184,10 @@ static FNS: &[TraitFunction] = &[
         name: "split_terminator",
         args_before: &[],
         args_after: &[],
-        ret_type: RetType::Raw("impl Iterator<Item = &str>"),
+        ret_type: RetType::Redefined {
+            name: "SplitTerminator",
+            items: "&'a str",
+        },
         since: Version { minor: 0 },
         double_ended: false,
     },
@@ -170,7 +195,10 @@ static FNS: &[TraitFunction] = &[
         name: "rsplit_terminator",
         args_before: &[],
         args_after: &[],
-        ret_type: RetType::Raw("impl Iterator<Item = &str>"),
+        ret_type: RetType::Redefined {
+            name: "RSplitTerminator",
+            items: "&'a str",
+        },
         since: Version { minor: 0 },
         double_ended: false,
     },
@@ -178,7 +206,10 @@ static FNS: &[TraitFunction] = &[
         name: "splitn",
         args_before: &[("n", "usize")],
         args_after: &[],
-        ret_type: RetType::Raw("impl Iterator<Item = &str>"),
+        ret_type: RetType::Redefined {
+            name: "SplitN",
+            items: "&'a str",
+        },
         since: Version { minor: 0 },
         double_ended: false,
     },
@@ -186,7 +217,10 @@ static FNS: &[TraitFunction] = &[
         name: "rsplitn",
         args_before: &[("n", "usize")],
         args_after: &[],
-        ret_type: RetType::Raw("impl Iterator<Item = &str>"),
+        ret_type: RetType::Redefined {
+            name: "RSplitN",
+            items: "&'a str",
+        },
         since: Version { minor: 0 },
         double_ended: false,
     },
@@ -194,7 +228,10 @@ static FNS: &[TraitFunction] = &[
         name: "matches",
         args_before: &[],
         args_after: &[],
-        ret_type: RetType::Raw("impl Iterator<Item = &str>"),
+        ret_type: RetType::Redefined {
+            name: "Matches",
+            items: "&'a str",
+        },
         since: Version { minor: 0 },
         double_ended: false,
     },
@@ -202,7 +239,10 @@ static FNS: &[TraitFunction] = &[
         name: "rmatches",
         args_before: &[],
         args_after: &[],
-        ret_type: RetType::Raw("impl Iterator<Item = &str>"),
+        ret_type: RetType::Redefined {
+            name: "RMatches",
+            items: "&'a str",
+        },
         since: Version { minor: 0 },
         double_ended: false,
     },
@@ -210,7 +250,10 @@ static FNS: &[TraitFunction] = &[
         name: "match_indices",
         args_before: &[],
         args_after: &[],
-        ret_type: RetType::Raw("impl Iterator<Item = (usize, &str)>"),
+        ret_type: RetType::Redefined {
+            name: "MatchIndices",
+            items: "(usize, &'a str)",
+        },
         since: Version { minor: 0 },
         double_ended: false,
     },
@@ -218,7 +261,10 @@ static FNS: &[TraitFunction] = &[
         name: "rmatch_indices",
         args_before: &[],
         args_after: &[],
-        ret_type: RetType::Raw("impl Iterator<Item = (usize, &str)>"),
+        ret_type: RetType::Redefined {
+            name: "RMatchIndices",
+            items: "(usize, &'a str)",
+        },
         since: Version { minor: 0 },
         double_ended: false,
     },
@@ -266,7 +312,10 @@ static FNS: &[TraitFunction] = &[
         name: "split_inclusive",
         args_before: &[],
         args_after: &[],
-        ret_type: RetType::Raw("impl Iterator<Item = &str>"),
+        ret_type: RetType::Redefined {
+            name: "SplitInclusive",
+            items: "&'a str",
+        },
         since: Version { minor: 51 },
         double_ended: false,
     },

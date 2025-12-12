@@ -7,11 +7,11 @@ use crate::private::Sealed;
 pub trait Searchable: Sealed {
 {%- for func in fns %}
 {%- if !func.double_ended %}
-    {%- if let Some(redef) = func.redef_local_name() %}
-        #[cfg(feature = "{{func.since}}")]
-        type {{redef}}<'a>;
-    {% endif %}
-    #[cfg(feature = "{{func.since}}")]
+    {%- if let Some((redef,items)) = func.redef_local_name_and_items() %}
+    #[cfg(feature = "{{func.feature_gate()}}")]
+    type {{redef}}<'a> : Iterator<Item = {{ items }}>;
+    {%- endif %}
+    #[cfg(feature = "{{func.feature_gate()}}")]
     fn {{ func.name }}(
         self,
         haystack: &str,
@@ -30,11 +30,11 @@ pub trait Searchable: Sealed {
 pub trait DoubleEndedSearchable: Searchable {
 {%- for func in fns %}
 {%- if func.double_ended %}
-    {%- if let Some(redef) = func.redef_local_name() %}
-        #[cfg(feature = "{{func.since}}")]
-        type {{redef}}<'a>;
-    {% endif %}
-    #[cfg(feature = "{{func.since}}")]
+    {%- if let Some((redef,items)) = func.redef_local_name_and_items() %}
+    #[cfg(feature = "{{func.feature_gate()}}")]
+    type {{redef}}<'a> : Iterator<Item = {{ items }}>;
+    {%- endif %}
+    #[cfg(feature = "{{func.feature_gate()}}")]
     fn {{ func.name }}(
         self,
         haystack: &str,
@@ -66,11 +66,11 @@ impl<{{ name }}> Searchable for {{ name }} where {{ bounds }} {
 {%- endmatch %}
 {%- for func in fns %}
 {%- if !func.double_ended %}
-    {%- if let Some(redef) = func.redef_local_name() %}
-        #[cfg(feature = "{{func.since}}")]
-        type {{redef}}<'a> = std::str::{{redef}}<'a,Self>;
-    {% endif %}
-    #[cfg(feature = "{{func.since}}")]
+    {%- if let Some((redef,_)) = func.redef_local_name_and_items() %}
+    #[cfg(feature = "{{func.feature_gate()}}")]
+    type {{redef}}<'a> = std::str::{{redef}}<'a,Self>;
+    {%- endif %}
+    #[cfg(feature = "{{func.feature_gate()}}")]
     fn {{ func.name }}(
         self,
         haystack: &str,
@@ -108,11 +108,11 @@ impl<{{ name }}> DoubleEndedSearchable for {{ name }} where {{ bounds }} {
 {%- endmatch %}
 {%- for func in fns %}
 {%- if func.double_ended %}
-    {%- if let Some(redef) = func.redef_local_name() %}
-        #[cfg(feature = "{{func.since}}")]
-        type {{redef}}<'a> = std::str::{{redef}}<'a,Self>;
-    {% endif %}
-    #[cfg(feature = "{{func.since}}")]
+    {%- if let Some((redef,_)) = func.redef_local_name_and_items() %}
+    #[cfg(feature = "{{func.feature_gate()}}")]
+    type {{redef}}<'a> = std::str::{{redef}}<'a,Self>;
+    {%- endif %}
+    #[cfg(feature = "{{func.feature_gate()}}")]
     fn {{ func.name }}(
         self,
         haystack: &str,
