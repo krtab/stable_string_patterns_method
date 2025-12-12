@@ -7,7 +7,16 @@ use crate::private::Sealed;
 pub trait Searchable: Sealed {
 {%- for func in fns %}
     #[cfg(feature = "{{func.since}}")]
-    fn {{ func.name }}(self, haystack: &str) -> {{ func.ret_type }};
+    fn {{ func.name }}(
+        self,
+        haystack: &str,
+        {%- for (name, typ) in func.args_before %}
+            {{ name }} : {{ typ }},
+        {%- endfor %}
+        {%- for (name, typ) in func.args_after %}
+            {{ name }} : {{ typ }},
+        {%- endfor %}
+    ) -> {{ func.ret_type }};
 {%- endfor %}
 }
 
@@ -29,8 +38,25 @@ impl<{{ name }}> Searchable for {{ name }} where {{ bounds }} {
 
 {%- for func in fns %}
     #[cfg(feature = "{{func.since}}")]
-    fn {{ func.name }}(self, haystack: &str) -> {{ func.ret_type }} {
-        haystack.{{ func.name }}(self)
+    fn {{ func.name }}(
+        self,
+        haystack: &str,
+        {%- for (name, typ) in func.args_before %}
+            {{ name }} : {{ typ }},
+        {%- endfor %}
+        {%- for (name, typ) in func.args_after %}
+            {{ name }} : {{ typ }},
+        {%- endfor %}
+        ) -> {{ func.ret_type }} {
+        haystack.{{ func.name }}(
+            {%- for (name, typ) in func.args_before %}
+                {{ name }},
+            {%- endfor %}
+            self
+            {%- for (name, typ) in func.args_after %}
+                {{ name }},
+            {%- endfor %}
+        )
     }
 {%- endfor %}
 }

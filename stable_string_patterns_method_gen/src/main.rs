@@ -28,6 +28,8 @@ enum ImplTarget {
 #[derive(Debug)]
 struct TraitFunction {
     name: &'static str,
+    args_before: &'static [(&'static str, &'static str)],
+    args_after: &'static [(&'static str, &'static str)],
     ret_type: &'static str,
     since: Version,
 }
@@ -44,18 +46,31 @@ static TARGETS: &[ImplTarget] = &[
 static FNS: &[TraitFunction] = &[
     TraitFunction {
         name: "find",
+        args_before: &[],
+        args_after: &[],
         ret_type: "Option<usize>",
         since: Version { minor: 0 },
     },
     TraitFunction {
         name: "trim_start_matches",
+        args_before: &[],
+        args_after: &[],
         ret_type: "&str",
         since: Version { minor: 30 },
     },
     TraitFunction {
         name: "strip_prefix",
+        args_before: &[],
+        args_after: &[],
         ret_type: "Option<&str>",
         since: Version { minor: 45 },
+    },
+        TraitFunction {
+        name: "splitn",
+        args_before: &[("n","usize")],
+        args_after: &[],
+        ret_type: "impl Iterator<Item = &str>",
+        since: Version { minor: 0 },
     },
 ];
 
@@ -97,7 +112,6 @@ fn main() -> anyhow::Result<()> {
         ))
     };
 
-    // Render lib.rs template
     LibTemplate {
         targets: TARGETS,
         fns: FNS,
