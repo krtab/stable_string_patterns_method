@@ -21,11 +21,14 @@ enum ImplTarget {
     Type {
         ty: &'static str,
         double_ended: bool,
+        version: Version,
     },
     Generic {
+        intro: &'static str,
         name: &'static str,
         bounds: &'static str,
         double_ended: bool,
+        version: Version,
     },
 }
 
@@ -35,6 +38,12 @@ impl ImplTarget {
             ImplTarget::Type { double_ended, .. } | ImplTarget::Generic { double_ended, .. } => {
                 *double_ended
             }
+        }
+    }
+
+    fn version(&self) -> Version {
+        match self {
+            ImplTarget::Type { version, .. } | ImplTarget::Generic { version, .. } => *version,
         }
     }
 }
@@ -92,19 +101,40 @@ static TARGETS: &[ImplTarget] = &[
     ImplTarget::Type {
         ty: "&str",
         double_ended: false,
+        version: Version { minor: 0 },
     },
     ImplTarget::Type {
         ty: "char",
         double_ended: true,
+        version: Version { minor: 0 },
     },
     ImplTarget::Type {
         ty: "&[char]",
         double_ended: true,
+        version: Version { minor: 0 },
     },
     ImplTarget::Generic {
+        intro: "F",
         name: "F",
         bounds: "F: FnMut(char) -> bool",
         double_ended: true,
+        version: Version { minor: 0 },
+    },
+    ImplTarget::Generic {
+        intro: "const N: usize",
+        name: "[char; N]",
+        bounds: "",
+        double_ended: true,
+        // const generics
+        version: Version { minor: 51 },
+    },
+    ImplTarget::Generic {
+        intro: "const N: usize",
+        name: "&[char; N]",
+        bounds: "",
+        double_ended: true,
+        // const generics
+        version: Version { minor: 51 },
     },
 ];
 
@@ -225,6 +255,22 @@ static FNS: &[TraitFunction] = &[
         double_ended: false,
     },
     TraitFunction {
+        name: "split_once",
+        args_before: &[],
+        args_after: &[],
+        ret_type: RetType::Raw("Option<(& str,& str)>"),
+        since: Version { minor: 52 },
+        double_ended: false,
+    },
+    TraitFunction {
+        name: "rsplit_once",
+        args_before: &[],
+        args_after: &[],
+        ret_type: RetType::Raw("Option<(& str,& str)>"),
+        since: Version { minor: 52 },
+        double_ended: false,
+    },
+    TraitFunction {
         name: "matches",
         args_before: &[],
         args_after: &[],
@@ -333,7 +379,7 @@ static FNS: &[TraitFunction] = &[
         args_after: &[],
         ret_type: RetType::Raw("&str"),
         since: Version { minor: 30 },
-        double_ended: true,
+        double_ended: false,
     },
 ];
 

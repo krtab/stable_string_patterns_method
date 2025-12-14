@@ -53,15 +53,19 @@ pub trait DoubleEndedSearchable: Searchable {
 {%- match target %}
 {%- when ImplTarget::Type with { ty, .. } %}
 
+#[cfg(feature = "{{target.version()}}")]
 impl Sealed for {{ ty }} {}
 
+#[cfg(feature = "{{target.version()}}")]
 impl Searchable for {{ ty }} {
 
-{%- when ImplTarget::Generic with { name, bounds, .. } %}
+{%- when ImplTarget::Generic with { intro, name, bounds, .. } %}
 
-impl<{{ name }}> Sealed for {{ name }} where {{ bounds }} {}
+#[cfg(feature = "{{target.version()}}")]
+impl<{{ intro }}> Sealed for {{ name }} where {{ bounds }} {}
 
-impl<{{ name }}> Searchable for {{ name }} where {{ bounds }} {
+#[cfg(feature = "{{target.version()}}")]
+impl<{{ intro }}> Searchable for {{ name }} where {{ bounds }} {
 
 {%- endmatch %}
 {%- for func in fns %}
@@ -99,11 +103,13 @@ impl<{{ name }}> Searchable for {{ name }} where {{ bounds }} {
 {%- match target %}
 {%- when ImplTarget::Type with { ty, .. } %}
 
+#[cfg(feature = "{{target.version()}}")]
 impl DoubleEndedSearchable for {{ ty }} {
 
-{%- when ImplTarget::Generic with { name, bounds, .. } %}
+{%- when ImplTarget::Generic with { intro, name, bounds, .. } %}
 
-impl<{{ name }}> DoubleEndedSearchable for {{ name }} where {{ bounds }} {
+#[cfg(feature = "{{target.version()}}")]
+impl<{{ intro }}> DoubleEndedSearchable for {{ name }} where {{ bounds }} {
 
 {%- endmatch %}
 {%- for func in fns %}
@@ -139,9 +145,33 @@ impl<{{ name }}> DoubleEndedSearchable for {{ name }} where {{ bounds }} {
 {%- endif %}
 {%- endfor %}
 
+pub trait IntoSearchable {
+    type Search : Searchable;
+
+    fn into_searchable(self) -> Self::Search;
+}
+
+impl<S: Searchable> IntoSearchable for S {
+    type Search = Self;
+
+    fn into_searchable(self) -> Self {
+        self
+    }
+}
+
+pub struct WhiteSpace;
+
+impl IntoSearchable for WhiteSpace {
+    type Search = fn(char) -> bool;
+
+    fn into_searchable(self) -> Self::Search {
+        char::is_whitespace
+    }
+}
+
 pub trait StrPatternExt : std::convert::AsRef<str> {
 {%- for func in fns %}
-    fn {{ func.name }}<P>
+    fn {{ func.name }}_<P>
     (
     &self,
     {%- for (name, typ) in func.args_before %}
@@ -151,15 +181,14 @@ pub trait StrPatternExt : std::convert::AsRef<str> {
     {%- for (name, typ) in func.args_after %}
         {{ name }} : {{ typ }},
     {%- endfor %}
-    ) -> {{ func.ret_type("P") }}
+    ) -> {{ func.ret_type("<<P as IntoSearchable>::Search as Searchable>") }}
     where
+    P: IntoSearchable,
     {%- if func.double_ended %}
-    P: DoubleEndedSearchable
-    {%- else %}
-    P: Searchable
+    P::Search: DoubleEndedSearchable
     {% endif %}
     {
-        pattern.{{ func.name }}_impl(
+        pattern.into_searchable().{{ func.name }}_impl(
             self.as_ref(),
             {%- for (name, typ) in func.args_before %}
                 {{ name }},
